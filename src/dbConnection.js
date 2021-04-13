@@ -20,9 +20,8 @@ async function intitalizeOracle(cb) {
     await oracledb.createPool(config, function (err, pool) {
       if (err) {
         console.error("createPool() callback: " + err.message);
-        return;
       }
-      cb();
+      return;
     });
   } catch (err) {
     console.error("Whoops!");

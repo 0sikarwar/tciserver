@@ -6,13 +6,15 @@
   "scripts": {
     "build": "rm -rf tci_server && webpack --mode production && cp {package.json,yarn.lock} tci_server/",
     "start": "nodemon --inspect server.js",
-    "prod": "IP=10.0.0.110 pm2 restart tci-server --update-env",
+    "prod": "pm2 restart tci-server --update-env",
     "dev": "rm -rf tci_server && webpack --mode development && cp {package.json,yarn.lock} tci_server/ && node tci_server/server.js",
     "deploy": "yarn run build && scp -r -i /etc/ssh/ssh-key-oracle.key /Users/gyanendersingh/tciserver/tci_server ubuntu@152.67.10.119:~/."
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
     "oracledb": "^5.1.0"
   },
   "devDependencies": {
