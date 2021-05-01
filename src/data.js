@@ -1,0 +1,38 @@
+const destinationGroupList = {
+  "Srinagar and Metro": ["mumbai", "kolkata", "chennai", "bangalore", "ahmedabad", "pune"],
+  Guwahati: [],
+  "HR, PB and HP": ["chandigarh", "haryana", "himachal pradesh", "punjab"],
+  "J and K": ["jammu", "kashmir"],
+  "Delhi and NCR": ["delhi"],
+  "Rest of North": ["rajasthan", "uttarakhand", "uttar pradesh"],
+  "West and South/ROI": [
+    "andhra pradesh",
+    "chhattisgarh",
+    "dadra and nagar haveli",
+    "daman and diu",
+    "goa",
+    "gujarat",
+    "jharkhand",
+    "karnataka",
+    "kerala",
+    "madhya pradesh",
+    "maharashtra",
+    "odisha",
+    "puducherry",
+    "tamil nadu",
+    "telangana",
+    "west bengal",
+    "bihar",
+  ],
+  "North East": ["arunachal pradesh", "assam", "meghalaya", "mizoram", "sikkim"],
+  "Leh, Tripura, Manipur, Nagaland, Silchar and Andaman Nicobar": [
+    "andaman and nicobar islands",
+    "lakshadweep",
+    "ladakh",
+    "manipur",
+    "nagaland",
+    "tripura",
+  ],
+};
+
+module.exports = { destinationGroupList };

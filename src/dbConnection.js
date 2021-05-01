@@ -36,8 +36,16 @@ function executeDbQuery(query, cb) {
       cb(null, err);
       return;
     } else {
+      let options = {};
+      let sqlQuery = "";
+      if (typeof query === "string") {
+        sqlQuery = query;
+      } else {
+        sqlQuery = query.query;
+        options = query.options;
+      }
       conn
-        .execute(query)
+        .execute(sqlQuery, options)
         .then((result) => cb(result))
         .catch((err) => cb(null, err))
         .finally(() => {
@@ -52,8 +60,18 @@ function executeDbQuery(query, cb) {
   });
 }
 
+function getQueryValueString(body) {
+  let values = "";
+  Object.values(body).forEach((val) => {
+    if (values) values += ",";
+    values += `'${val}'`;
+  });
+  return values;
+}
+
 module.exports = {
   config,
   intitalizeOracle,
   executeDbQuery,
+  getQueryValueString,
 };
