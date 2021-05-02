@@ -1,5 +1,5 @@
 const oracledb = require("oracledb");
-const { sendJsonResp, handleErr, getDestinationCategory } = require("./utils");
+const { sendJsonResp, handleErr, getDestinationCategory, getFormattedDate } = require("./utils");
 const { executeDbQuery, getQueryValueString } = require("./dbConnection");
 const {
   handleInsertQueryResp,
@@ -8,28 +8,18 @@ const {
   handleGetInvoiceDataResp,
 } = require("./dbRespHelper");
 
-function saveContactData(req, res) {
+async function saveContactData(req, res) {
   const body = req.body;
   const values = getQueryValueString(body);
   const query = `INSERT INTO ADMIN.CONTACT_US_TABLE (${Object.keys(body).join(", ")}) VALUES (${values})`;
-  try {
-    executeDbQuery(query, (result, err) => {
-      handleInsertQueryResp(query, result, err, res);
-    });
-  } catch (err) {
-    handleErr(err, res);
-  }
+  const result = await executeDbQuery(query, res);
+  result && handleInsertQueryResp(query, result, res);
 }
 
-function getContactQueries(req, res) {
+async function getContactQueries(req, res) {
   const query = `select * from contact_us_table ORDER BY query_date desc`;
-  try {
-    executeDbQuery(query, (result, err) => {
-      handleSelectQueryResp(query, result, err, res);
-    });
-  } catch (err) {
-    handleErr(err, res);
-  }
+  const result = await executeDbQuery(query, res);
+  result && handleSelectQueryResp(query, result, res);
 }
 
 function getTestData(req, res) {
@@ -41,31 +31,17 @@ function getTestData(req, res) {
   }
 }
 
-function saveNewPartyData(req, res) {
+async function saveNewPartyData(req, res) {
   const { formData, rateList } = req.body;
   const values = getQueryValueString(formData);
   const insertCompanyQuery = `INSERT INTO ADMIN.COMPANY_DATA_TABLE (${Object.keys(formData).join(",")}) 
   VALUES (${values}) returning id INTO :new_company_id`;
-  try {
-    const options = { new_company_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
-    executeDbQuery({ query: insertCompanyQuery, options }, (result, err) => {
-      handleAddCompanyResp(insertCompanyQuery, result, err, res, formData, rateList);
-    });
-  } catch (err) {
-    handleErr(err, res);
-  }
-}
-function getDate(str) {
-  const arr = str.split("/");
-  arr.forEach((item, i) => {
-    if (item.length < 2) {
-      arr[i] = "0" + item;
-    }
-  });
-  return new Date(`${arr[1]}-${arr[0]}-${arr[2]}`).getTime();
+  const options = { new_company_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
+  const result = await executeDbQuery({ query: insertCompanyQuery, options }, res);
+  result && handleAddCompanyResp(insertCompanyQuery, result, res, formData, rateList);
 }
 
-function saveDocketData(req, res) {
+async function saveDocketData(req, res) {
   const { formData } = req.body;
   let isError = false;
   let query = "INSERT ALL ";
@@ -82,7 +58,7 @@ function saveDocketData(req, res) {
       }
       if (key === "destination") dest_cat = getDestinationCategory(val);
       if (valString) valString += ",";
-      valString += key === "docket_date" ? `'${getDate(val)}'` : `'${val}'`;
+      valString += key === "docket_date" ? `'${getFormattedDate(val)}'` : `'${val}'`;
     });
     valString += `,'${dest_cat}'`;
     const keysString = `${Object.keys(obj).join(", ")}, DESTINATION_CATEGORY`;
@@ -90,34 +66,23 @@ function saveDocketData(req, res) {
   });
   if (isError) return;
   query += "SELECT null FROM dual";
-  executeDbQuery(query, (result, err) => {
-    handleInsertQueryResp(query, result, err, res);
-  });
+  const result = await executeDbQuery(query, res);
+  result && handleInsertQueryResp(query, result, res);
 }
 
-function getCompanyNames(req, res) {
+async function getCompanyNames(req, res) {
   const query = `select * from COMPANY_DATA_TABLE ORDER BY COMPANY_NAME desc`;
-  try {
-    executeDbQuery(query, (result, err) => {
-      handleSelectQueryResp(query, result, err, res);
-    });
-  } catch (err) {
-    handleErr(err, res);
-  }
+  const result = await executeDbQuery(query, res);
+  result && handleSelectQueryResp(query, result, res);
 }
 
-function getDockets(req, res) {
+async function getDockets(req, res) {
   const query = `select * from DOCKET_DETAIL_TABLE ORDER BY docket_date desc`;
-  try {
-    executeDbQuery(query, (result, err) => {
-      handleSelectQueryResp(query, result, err, res);
-    });
-  } catch (err) {
-    handleErr(err, res);
-  }
+  const result = await executeDbQuery(query, res);
+  result && handleSelectQueryResp(query, result, res);
 }
 
-function getDataForInvoice(req, res) {
+async function getDataForInvoice(req, res) {
   const queryParam = req.query;
   const formData = JSON.parse(queryParam.formData);
   const startDate = new Date(formData.for_month);
@@ -126,17 +91,13 @@ function getDataForInvoice(req, res) {
     (docket_date BETWEEN
       '${startDate.getTime()}' AND '${endDate.getTime()}' )
       AND (COMPANY_ID=${formData.company_id}) ORDER BY docket_date desc`;
-  try {
-    executeDbQuery(query, (result, err) => {
-      handleGetInvoiceDataResp(query, result, err, res, {
-        ...formData,
-        from: startDate.toDateString(),
-        to: endDate.toDateString(),
-      });
+  const result = await executeDbQuery(query, res);
+  result &&
+    handleGetInvoiceDataResp(query, result, res, {
+      ...formData,
+      from: startDate.toDateString(),
+      to: endDate.toDateString(),
     });
-  } catch (err) {
-    handleErr(err, res);
-  }
 }
 
 module.exports = {

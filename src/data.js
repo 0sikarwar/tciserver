@@ -1,5 +1,5 @@
 const destinationGroupList = {
-  "Srinagar and Metro": ["mumbai", "kolkata", "chennai", "bangalore", "ahmedabad", "pune"],
+  "Srinagar and Metro": ["mumbai", "kolkata", "chennai", "bangalore", "ahmedabad", "pune", "srinagar"],
   Guwahati: [],
   "HR, PB and HP": ["chandigarh", "haryana", "himachal pradesh", "punjab"],
   "J and K": ["jammu", "kashmir"],

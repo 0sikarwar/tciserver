@@ -2,7 +2,7 @@ require("babel-polyfill");
 const express = require("express");
 const { intitalizeOracle } = require("./src/dbConnection");
 const routes = require("./src/routes");
-const { sendJsonResp } = require("./src/utils");
+const { sendJsonResp, handleErr } = require("./src/utils");
 const { authRquiredApis, isAuthorizedUser } = require("./src/authentication");
 const auth = require("basic-auth");
 var cors = require("cors");
@@ -24,14 +24,18 @@ app.use((req, res, next) => {
   }
 });
 app.use((req, res) => {
-  const route = routes[req.url.split("?")[0]];
-  if (route) route(req, res);
-  else {
-    const data = {
-      status: "NOT_FOUND",
-      desc: "server can't find the requested url",
-    };
-    sendJsonResp(res, data, 404);
+  try {
+    const route = routes[req.url.split("?")[0]];
+    if (route) route(req, res);
+    else {
+      const data = {
+        status: "NOT_FOUND",
+        desc: "server can't find the requested url",
+      };
+      sendJsonResp(res, data, 404);
+    }
+  } catch (err) {
+    handleErr(err, res);
   }
 });
 

@@ -2,16 +2,7 @@ const { sendJsonResp, convertDbDataToJson } = require("./utils");
 const { executeDbQuery } = require("./dbConnection");
 const oracledb = require("oracledb");
 
-function handleDbErr(query, err, res) {
-  sendJsonResp(res, { status: "DB_ERROR", desc: "Something went wrong", err }, 500);
-  console.error("DB_ERROR", err, query);
-}
-
-function handleInsertQueryResp(query, result, err, res, ...args) {
-  if (err) {
-    handleDbErr(query, err, res);
-    return;
-  }
+function handleInsertQueryResp(query, result, res, ...args) {
   const data = {
     status: "SUCCESS",
     desc: "DATA Saved",
@@ -20,11 +11,7 @@ function handleInsertQueryResp(query, result, err, res, ...args) {
   sendJsonResp(res, data, 200);
 }
 
-function handleSelectQueryResp(query, result, err, res) {
-  if (err) {
-    handleDbErr(query, err, res);
-    return;
-  }
+function handleSelectQueryResp(query, result, res) {
   const data = {
     status: "SUCCESS",
     desc: "",
@@ -33,15 +20,11 @@ function handleSelectQueryResp(query, result, err, res) {
   sendJsonResp(res, data, 200);
 }
 
-function handleAddCompanyResp(query, result, err, res, formData, rateList) {
-  if (err) {
-    handleDbErr(query, err, res);
-    return;
-  }
+async function handleAddCompanyResp(query, result, res, formData, rateList) {
   const company_id = result.outBinds.new_company_id[0];
   const companyDetail = { company_id, company_name: formData.company_name };
   if (!rateList || !rateList.length) {
-    handleInsertQueryResp(query, result, err, res, companyDetail);
+    handleInsertQueryResp(query, result, res, companyDetail);
   }
   let insertRateListQuery = "INSERT ALL ";
   rateList.forEach((obj) => {
@@ -54,22 +37,14 @@ function handleAddCompanyResp(query, result, err, res, formData, rateList) {
     insertRateListQuery += `INTO ADMIN.RATE_LIST_TABLE (${keysString}) VALUES (${valString}) `;
   });
   insertRateListQuery += "SELECT null FROM dual";
-  executeDbQuery(insertRateListQuery, (rateListResult, err) => {
-    handleInsertQueryResp(insertRateListQuery, rateListResult, err, res, companyDetail);
-  });
+  const rateListResult = await executeDbQuery(insertRateListQuery, res);
+  rateListResult && handleInsertQueryResp(insertRateListQuery, rateListResult, res, companyDetail);
 }
 
-function handleGetInvoiceDataResp(docketQuery, docketResult, docketErr, res, formData) {
-  if (docketErr) {
-    handleDbErr(docketQuery, docketErr, res);
-    return;
-  }
+async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData) {
   const rateListQuery = `select * from RATE_LIST_TABLE WHERE COMPANY_ID=${formData.company_id}`;
-  executeDbQuery(rateListQuery, (rateListResult, rateListErr) => {
-    if (rateListErr) {
-      handleDbErr(rateListQuery, rateListErr, res);
-      return;
-    }
+  const rateListResult = await executeDbQuery(rateListQuery, res);
+  if (rateListResult) {
     const docketList = convertDbDataToJson(docketResult);
     const ratesList = convertDbDataToJson(rateListResult);
     const ratesObj = {};
@@ -78,23 +53,28 @@ function handleGetInvoiceDataResp(docketQuery, docketResult, docketErr, res, for
     ratesList.forEach((item) => (ratesObj[item.destination] = item));
     const updatedList = docketList.map((item) => {
       const obj = { ...item };
-      if (item.weight <= 0.25) {
-        obj.amount = ratesObj[item.destination_category].upto250gms;
-      } else if (item.weight <= 0.5) {
-        obj.amount = ratesObj[item.destination_category].upto500gms;
-      } else if (item.weight <= 1) {
-        obj.amount = ratesObj[item.destination_category].upto1kg;
+      if (!ratesObj[item.destination_category]) {
+        obj.amount = "NA";
       } else {
-        const mutilplier = item.destination_category === "HR, PB and HP" || item.docket_mode === "Air" ? 3 : 5;
-        const tempRate =
-          ratesObj[item.destination_category][item.docket_mode === "Air" ? "above1kgair" : "above1kgsur"];
-        if (item.weight <= mutilplier) {
-          obj.amount = Number(tempRate) * mutilplier;
+        if (item.weight <= 0.25) {
+          obj.amount = ratesObj[item.destination_category].upto250gms;
+        } else if (item.weight <= 0.5) {
+          obj.amount = ratesObj[item.destination_category].upto500gms;
+        } else if (item.weight <= 1) {
+          obj.amount = ratesObj[item.destination_category].upto1kg;
         } else {
-          obj.amount = Number(tempRate) * Math.ceil(item.weight);
+          const mutilplier = item.destination_category === "HR, PB and HP" || item.docket_mode === "Air" ? 3 : 5;
+          const tempRate =
+            ratesObj[item.destination_category][item.docket_mode === "Air" ? "above1kgair" : "above1kgsur"];
+          if (item.weight <= mutilplier) {
+            obj.amount = Number(tempRate) * mutilplier;
+          } else {
+            obj.amount = Number(tempRate) * Math.ceil(item.weight);
+          }
         }
+
+        totalAmount += Number(obj.amount);
       }
-      totalAmount += Number(obj.amount);
       obj.weight = (obj.weight[0] === "." ? "0" : "") + obj.weight + " Kg";
       return obj;
     });
@@ -108,11 +88,8 @@ function handleGetInvoiceDataResp(docketQuery, docketResult, docketErr, res, for
       invoice_number: "",
     };
     const selectInvoiceQuery = `Select id from INVOICE_TABLE where COMPANY_ID=${formData.company_id} AND  FOR_MONTH='${formData.for_month}'`;
-    executeDbQuery(selectInvoiceQuery, function (selectResult, selectErr) {
-      if (selectErr) {
-        handleDbErr(selectInvoiceQuery, selectErr, res);
-        return;
-      }
+    const selectResult = await executeDbQuery(selectInvoiceQuery, res);
+    if (selectResult) {
       const selectedInvoice = convertDbDataToJson(selectResult);
       if (selectedInvoice.length) {
         data.invoice_number = selectedInvoice[0].id;
@@ -121,17 +98,14 @@ function handleGetInvoiceDataResp(docketQuery, docketResult, docketErr, res, for
         const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (COMPANY_ID, COMPANY_NAME, FOR_MONTH) 
         VALUES (${formData.company_id}, '${formData.company_name}', '${formData.for_month}') returning id INTO :invoice_number`;
         const options = { invoice_number: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
-        executeDbQuery({ query: insertInvoiceQuery, options }, function (insertResult, insertErr) {
-          if (insertErr) {
-            handleDbErr(insertInvoiceQuery, insertErr, res);
-            return;
-          }
+        const insertResult = await executeDbQuery({ query: insertInvoiceQuery, options }, res);
+        if (insertResult) {
           data.invoice_number = insertResult.outBinds.invoice_number[0];
           sendJsonResp(res, data, 200);
-        });
+        }
       }
-    });
-  });
+    }
+  }
 }
 
 module.exports = { handleInsertQueryResp, handleSelectQueryResp, handleAddCompanyResp, handleGetInvoiceDataResp };

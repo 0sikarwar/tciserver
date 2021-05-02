@@ -50,9 +50,20 @@ function getDestinationCategory(destination) {
   return category;
 }
 
+function getFormattedDate(str, splitter = "/") {
+  const arr = str.split(splitter);
+  arr.forEach((item, i) => {
+    if (item.length < 2) {
+      arr[i] = "0" + item;
+    }
+  });
+  return new Date(`${arr[1]}-${arr[0]}-${arr[2]}`).getTime();
+}
+
 module.exports = {
   sendJsonResp,
   convertDbDataToJson,
   handleErr,
   getDestinationCategory,
+  getFormattedDate,
 };

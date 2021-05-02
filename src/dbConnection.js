@@ -1,4 +1,6 @@
 const oracledb = require("oracledb");
+const { sendJsonResp } = require("./utils");
+
 const config = {
   user: "ADMIN",
   password: "!@#$1234Cyber",
@@ -7,6 +9,11 @@ const config = {
   poolMin: 2,
   poolIncrement: 0,
 };
+
+function handleDbErr(query, err, res) {
+  sendJsonResp(res, { status: "DB_ERROR", desc: "Something went wrong", err }, 500);
+  console.error("DB_ERROR", err, query);
+}
 
 async function intitalizeOracle(cb) {
   try {
@@ -30,32 +37,32 @@ async function intitalizeOracle(cb) {
   }
 }
 
-function executeDbQuery(query, cb) {
-  oracledb.getConnection(function (err, conn) {
-    if (err) {
-      cb(null, err);
-      return;
-    } else {
+function executeDbQuery(query, res) {
+  return new Promise(async function (resolve, reject) {
+    let connection;
+    let sqlQuery = "";
+    try {
+      connection = await oracledb.getConnection();
       let options = {};
-      let sqlQuery = "";
       if (typeof query === "string") {
         sqlQuery = query;
       } else {
         sqlQuery = query.query;
         options = query.options;
       }
-      conn
-        .execute(sqlQuery, options)
-        .then((result) => cb(result))
-        .catch((err) => cb(null, err))
-        .finally(() => {
-          conn.release(function (err) {
-            if (err) {
-              cb(null, err);
-              return;
-            }
-          });
-        });
+      const result = await connection.execute(sqlQuery, options);
+      resolve(result);
+    } catch (err) {
+      handleDbErr(sqlQuery, err, res);
+      reject();
+    } finally {
+      if (connection) {
+        try {
+          await connection.release();
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
   });
 }
