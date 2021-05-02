@@ -6,6 +6,7 @@ const {
   handleSelectQueryResp,
   handleAddCompanyResp,
   handleGetInvoiceDataResp,
+  insertInRateList,
 } = require("./dbRespHelper");
 
 async function saveContactData(req, res) {
@@ -100,6 +101,62 @@ async function getDataForInvoice(req, res) {
     });
 }
 
+async function getDataToUpadate(req, res) {
+  const queryParam = req.query;
+  const tableName = queryParam.type === "getdocket" ? "DOCKET_DETAIL_TABLE" : "RATE_LIST_TABLE";
+  const key = Object.keys(queryParam)[1];
+  const query = `select * from ${tableName} where ${key} = '${queryParam[key]}'`;
+  const result = await executeDbQuery(query, res);
+  result && handleSelectQueryResp(query, result, res);
+}
+
+async function updateDocketData(req, res) {
+  const { formData, listToUpdate } = req.body;
+  let isError = false;
+  let query = "UPDATE DOCKET_DETAIL_TABLE SET ";
+  let updateString = "",
+    dest_cat = "";
+  Object.entries(listToUpdate[0]).forEach(([key, val]) => {
+    if (["docket_num", "destination"].includes(key) && !val) {
+      handleErr({ msg: key + " field is Required" }, res, 206);
+      isError = true;
+    }
+    if (key === "destination") dest_cat = getDestinationCategory(val);
+    if (updateString) updateString += ",";
+    updateString += `${key} = '${key === "docket_date" ? getFormattedDate(val) : val}'`;
+  });
+  if (isError) return;
+  query += `${updateString}, DESTINATION_CATEGORY = '${dest_cat}' WHERE docket_num = '${formData.docket_num}'`;
+  const result = await executeDbQuery(query, res);
+  result && handleInsertQueryResp(query, result, res);
+}
+
+async function updateRateList(req, res) {
+  const { formData, listToUpdate, fetchedListLen } = req.body;
+  let result = [];
+  for (let obj of listToUpdate.slice(0, fetchedListLen)) {
+    let query = "UPDATE RATE_LIST_TABLE SET ";
+    let updateString = "";
+    Object.entries(obj).forEach(([key, val]) => {
+      if (key === "destination") dest_cat = getDestinationCategory(val);
+      if (updateString) updateString += ",";
+      updateString += `${key} = '${key === "docket_date" ? getFormattedDate(val) : val}'`;
+    });
+    query += `${updateString} WHERE company_id = '${formData.company_id}' and destination = '${obj.destination}'`;
+    const queryResult = await executeDbQuery(query, res);
+    result.push(queryResult);
+  }
+  if (result.length === fetchedListLen) {
+    const rateListResult = await insertInRateList(
+      listToUpdate.slice(fetchedListLen),
+      formData.company_id,
+      formData.company_name,
+      res
+    );
+    rateListResult && handleInsertQueryResp("MULTIPLE INSERT IN RATE TABEL", rateListResult, res);
+  }
+}
+
 module.exports = {
   saveContactData,
   getContactQueries,
@@ -109,4 +166,7 @@ module.exports = {
   getCompanyNames,
   getDockets,
   getDataForInvoice,
+  getDataToUpadate,
+  updateDocketData,
+  updateRateList,
 };

@@ -26,9 +26,14 @@ async function handleAddCompanyResp(query, result, res, formData, rateList) {
   if (!rateList || !rateList.length) {
     handleInsertQueryResp(query, result, res, companyDetail);
   }
+  const rateListResult = await insertInRateList(rateList, company_id, formData.company_name, res);
+  rateListResult && handleInsertQueryResp("MULTIPLE INSERT IN RATE TABEL", rateListResult, res, companyDetail);
+}
+
+async function insertInRateList(rateList, company_id, company_name, res) {
   let insertRateListQuery = "INSERT ALL ";
   rateList.forEach((obj) => {
-    let valString = `'${company_id}', '${formData.company_name}' `;
+    let valString = `'${company_id}', '${company_name}' `;
     Object.values(obj).forEach((val) => {
       if (valString) valString += ",";
       valString += `'${val}'`;
@@ -38,7 +43,7 @@ async function handleAddCompanyResp(query, result, res, formData, rateList) {
   });
   insertRateListQuery += "SELECT null FROM dual";
   const rateListResult = await executeDbQuery(insertRateListQuery, res);
-  rateListResult && handleInsertQueryResp(insertRateListQuery, rateListResult, res, companyDetail);
+  return rateListResult;
 }
 
 async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData) {
@@ -108,4 +113,10 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
   }
 }
 
-module.exports = { handleInsertQueryResp, handleSelectQueryResp, handleAddCompanyResp, handleGetInvoiceDataResp };
+module.exports = {
+  handleInsertQueryResp,
+  handleSelectQueryResp,
+  handleAddCompanyResp,
+  handleGetInvoiceDataResp,
+  insertInRateList,
+};

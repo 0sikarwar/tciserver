@@ -54,7 +54,7 @@ function executeDbQuery(query, res) {
       resolve(result);
     } catch (err) {
       handleDbErr(sqlQuery, err, res);
-      reject();
+      resolve(null);
     } finally {
       if (connection) {
         try {
