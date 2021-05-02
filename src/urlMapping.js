@@ -134,6 +134,7 @@ async function updateDocketData(req, res) {
 async function updateRateList(req, res) {
   const { formData, listToUpdate, fetchedListLen } = req.body;
   let result = [];
+  let isError = false;
   for (let obj of listToUpdate.slice(0, fetchedListLen)) {
     let query = "UPDATE RATE_LIST_TABLE SET ";
     let updateString = "";
@@ -146,15 +147,16 @@ async function updateRateList(req, res) {
     const queryResult = await executeDbQuery(query, res);
     result.push(queryResult);
   }
-  if (result.length === fetchedListLen) {
+  if (result.length === fetchedListLen && listToUpdate.length > fetchedListLen) {
     const rateListResult = await insertInRateList(
       listToUpdate.slice(fetchedListLen),
       formData.company_id,
       formData.company_name,
       res
     );
-    rateListResult && handleInsertQueryResp("MULTIPLE INSERT IN RATE TABEL", rateListResult, res);
+    if (!rateListResult) isError = true;
   }
+  !isError && handleInsertQueryResp("MULTIPLE INSERT IN RATE TABEL", {}, res);
 }
 
 module.exports = {
