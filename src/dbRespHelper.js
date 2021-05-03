@@ -1,6 +1,7 @@
 const { sendJsonResp, convertDbDataToJson } = require("./utils");
 const { executeDbQuery } = require("./dbConnection");
 const oracledb = require("oracledb");
+const { getKeysString } = require("./tableStructures");
 
 function handleInsertQueryResp(query, result, res, ...args) {
   const data = {
@@ -33,12 +34,12 @@ async function handleAddCompanyResp(query, result, res, formData, rateList) {
 async function insertInRateList(rateList, company_id, company_name, res) {
   let insertRateListQuery = "INSERT ALL ";
   rateList.forEach((obj) => {
-    let valString = `'${company_id}', '${company_name}' `;
+    const keysString = `company_id, ${getKeysString("rateList", obj)}`;
+    let valString = `'${company_id}' `;
     Object.values(obj).forEach((val) => {
       if (valString) valString += ",";
       valString += `'${val}'`;
     });
-    const keysString = `company_id, company_name, ${Object.keys(obj).join(", ")}`;
     insertRateListQuery += `INTO ADMIN.RATE_LIST_TABLE (${keysString}) VALUES (${valString}) `;
   });
   insertRateListQuery += "SELECT null FROM dual";
@@ -100,8 +101,8 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
         data.invoice_number = selectedInvoice[0].id;
         sendJsonResp(res, data, 200);
       } else {
-        const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (COMPANY_ID, COMPANY_NAME, FOR_MONTH) 
-        VALUES (${formData.company_id}, '${formData.company_name}', '${formData.for_month}') returning id INTO :invoice_number`;
+        const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (COMPANY_ID, FOR_MONTH) 
+        VALUES (${formData.company_id}, '${formData.for_month}') returning id INTO :invoice_number`;
         const options = { invoice_number: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
         const insertResult = await executeDbQuery({ query: insertInvoiceQuery, options }, res);
         if (insertResult) {

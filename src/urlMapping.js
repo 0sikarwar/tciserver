@@ -8,6 +8,7 @@ const {
   handleGetInvoiceDataResp,
   insertInRateList,
 } = require("./dbRespHelper");
+const { getKeysString, tableColumns } = require("./tableStructures");
 
 async function saveContactData(req, res) {
   const body = req.body;
@@ -35,7 +36,7 @@ function getTestData(req, res) {
 async function saveNewPartyData(req, res) {
   const { formData, rateList } = req.body;
   const values = getQueryValueString(formData);
-  const insertCompanyQuery = `INSERT INTO ADMIN.COMPANY_DATA_TABLE (${Object.keys(formData).join(",")}) 
+  const insertCompanyQuery = `INSERT INTO ADMIN.COMPANY_DATA_TABLE (${getKeysString("company", formData)}) 
   VALUES (${values}) returning id INTO :new_company_id`;
   const options = { new_company_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
   const result = await executeDbQuery({ query: insertCompanyQuery, options }, res);
@@ -52,6 +53,7 @@ async function saveDocketData(req, res) {
     if (["docket_num", "destination"].includes(obj.key) && !obj.val) {
       handleErr({ msg: obj.key + "field is Required" }, res);
     }
+    const keysString = `${getKeysString("docket", obj)}, DESTINATION_CATEGORY`;
     Object.entries(obj).forEach(([key, val]) => {
       if (["docket_num", "destination"].includes(key) && !val) {
         handleErr({ msg: key + " field is Required" }, res, 206);
@@ -62,7 +64,6 @@ async function saveDocketData(req, res) {
       valString += key === "docket_date" ? `'${getFormattedDate(val)}'` : `'${val}'`;
     });
     valString += `,'${dest_cat}'`;
-    const keysString = `${Object.keys(obj).join(", ")}, DESTINATION_CATEGORY`;
     query += `INTO ADMIN.DOCKET_DETAIL_TABLE (${keysString}) VALUES (${valString}) `;
   });
   if (isError) return;
@@ -78,7 +79,7 @@ async function getCompanyNames(req, res) {
 }
 
 async function getDockets(req, res) {
-  const query = `select * from DOCKET_DETAIL_TABLE ORDER BY docket_date desc`;
+  const query = `select * from DOCKET_DETAIL_TABLE ORDER BY id desc`;
   const result = await executeDbQuery(query, res);
   result && handleSelectQueryResp(query, result, res);
 }
@@ -117,6 +118,7 @@ async function updateDocketData(req, res) {
   let updateString = "",
     dest_cat = "";
   Object.entries(listToUpdate[0]).forEach(([key, val]) => {
+    if (!tableColumns.docket.includes(key.toLowerCase())) return;
     if (["docket_num", "destination"].includes(key) && !val) {
       handleErr({ msg: key + " field is Required" }, res, 206);
       isError = true;
