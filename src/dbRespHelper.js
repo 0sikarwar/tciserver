@@ -80,15 +80,16 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
         }
 
         totalAmount += Number(obj.amount);
+        obj.amount = `₹ ${obj.amount}`;
       }
-      obj.weight = (obj.weight[0] === "." ? "0" : "") + obj.weight + " Kg";
+      obj.weight = Number(obj.weight).toFixed(3) + " Kg";
       return obj;
     });
     const data = {
       status: "SUCCESS",
       desc: "",
       docketList: updatedList,
-      totalAmount,
+      totalAmount: `₹ ${totalAmount}`,
       ...formData,
       invoice_date: new Date().toDateString(),
       invoice_number: "",

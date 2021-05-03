@@ -92,7 +92,7 @@ async function getDataForInvoice(req, res) {
   const query = `select * from DOCKET_DETAIL_TABLE WHERE
     (docket_date BETWEEN
       '${startDate.getTime()}' AND '${endDate.getTime()}' )
-      AND (COMPANY_ID=${formData.company_id}) ORDER BY docket_date desc`;
+      AND (COMPANY_ID=${formData.company_id}) ORDER BY docket_date`;
   const result = await executeDbQuery(query, res);
   result &&
     handleGetInvoiceDataResp(query, result, res, {
