@@ -3,7 +3,7 @@ const columns = {
     "docket_num",
     "company_id",
     "destination",
-    "doacket_date",
+    "docket_date",
     "amount",
     "weight",
     "docket_mode",
