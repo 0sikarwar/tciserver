@@ -1,5 +1,5 @@
 const oracledb = require("oracledb");
-const { sendJsonResp, handleErr, getDestinationCategory, getFormattedDate } = require("./utils");
+const { sendJsonResp, handleErr, getDestinationCategory, getFormattedDate, convertDbDataToJson } = require("./utils");
 const { executeDbQuery, getQueryValueString } = require("./dbConnection");
 const {
   handleInsertQueryResp,
@@ -87,7 +87,7 @@ async function getDockets(req, res) {
 async function getDataForInvoice(req, res) {
   const queryParam = req.query;
   const formData = JSON.parse(queryParam.formData);
-  const startDate = new Date(formData.for_month);
+  const startDate = new Date(new Date(formData.for_month).setHours(0, 0, 0, 0));
   const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
   const query = `select * from DOCKET_DETAIL_TABLE WHERE
     (docket_date BETWEEN
@@ -108,7 +108,13 @@ async function getDataToUpadate(req, res) {
   const key = Object.keys(queryParam)[1];
   const query = `select * from ${tableName} where ${key} = '${queryParam[key]}'`;
   const result = await executeDbQuery(query, res);
-  result && handleSelectQueryResp(query, result, res);
+  let companyDetails = null;
+  if (queryParam.type === "getparty") {
+    const companyQuery = `select * from COMPANY_DATA_TABLE where id = ${queryParam.company_id}`;
+    companyDetails = await executeDbQuery(companyQuery, res);
+    companyDetails = convertDbDataToJson(companyDetails);
+  }
+  result && handleSelectQueryResp(query, result, res, { companyDetails });
 }
 
 async function updateDocketData(req, res) {
@@ -134,7 +140,7 @@ async function updateDocketData(req, res) {
 }
 
 async function updateRateList(req, res) {
-  const { formData, listToUpdate, fetchedListLen } = req.body;
+  const { formData, listToUpdate, fetchedListLen, companyDetails } = req.body;
   let result = [];
   let isError = false;
   for (let obj of listToUpdate.slice(0, fetchedListLen)) {
@@ -158,7 +164,31 @@ async function updateRateList(req, res) {
     );
     if (!rateListResult) isError = true;
   }
+  if (companyDetails) {
+    let query = "UPDATE COMPANY_DATA_TABLE SET ";
+    let updateString = "";
+    Object.entries(companyDetails).forEach(([key, val]) => {
+      if (key === "id") return;
+      if (updateString) updateString += ",";
+      updateString += `${key} = '${val}'`;
+    });
+    query += `${updateString} WHERE id = '${companyDetails.id}'`;
+    const queryResult = await executeDbQuery(query, res);
+    if (!queryResult) isError = true;
+  }
   !isError && handleInsertQueryResp("MULTIPLE INSERT IN RATE TABEL", {}, res);
+}
+
+async function getInvoiceNum(req, res) {
+  const queryParam = req.query;
+  const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (COMPANY_ID, FOR_MONTH) 
+        VALUES (${queryParam.company_id}, '${queryParam.for_month}') returning id INTO :invoice_number`;
+  const options = { invoice_number: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
+  const insertResult = await executeDbQuery({ query: insertInvoiceQuery, options }, res);
+  if (insertResult) {
+    data = { invoice_number: insertResult.outBinds.invoice_number[0] };
+    sendJsonResp(res, data, 200);
+  }
 }
 
 module.exports = {
@@ -173,4 +203,5 @@ module.exports = {
   getDataToUpadate,
   updateDocketData,
   updateRateList,
+  getInvoiceNum,
 };

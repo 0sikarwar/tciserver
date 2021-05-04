@@ -12,11 +12,12 @@ function handleInsertQueryResp(query, result, res, ...args) {
   sendJsonResp(res, data, 200);
 }
 
-function handleSelectQueryResp(query, result, res) {
+function handleSelectQueryResp(query, result, res, obj) {
   const data = {
     status: "SUCCESS",
     desc: "",
     list: convertDbDataToJson(result),
+    ...obj,
   };
   sendJsonResp(res, data, 200);
 }
@@ -70,8 +71,11 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
           obj.amount = ratesObj[item.destination_category].upto1kg;
         } else {
           const mutilplier = item.destination_category === "HR, PB and HP" || item.docket_mode === "Air" ? 3 : 5;
-          const tempRate =
-            ratesObj[item.destination_category][item.docket_mode === "Air" ? "above1kgair" : "above1kgsur"];
+          let tempRate = ratesObj[item.destination_category].above1kgsur;
+          if (item.docket_mode === "Air" && ratesObj[item.destination_category].above1kgair) {
+            tempRate = ratesObj[item.destination_category].above1kgsur;
+          }
+          tempRate -= obj.docket_discount;
           if (item.weight <= mutilplier) {
             obj.amount = Number(tempRate) * mutilplier;
           } else {
@@ -100,17 +104,8 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
       const selectedInvoice = convertDbDataToJson(selectResult);
       if (selectedInvoice.length) {
         data.invoice_number = selectedInvoice[0].id;
-        sendJsonResp(res, data, 200);
-      } else {
-        const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (COMPANY_ID, FOR_MONTH) 
-        VALUES (${formData.company_id}, '${formData.for_month}') returning id INTO :invoice_number`;
-        const options = { invoice_number: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
-        const insertResult = await executeDbQuery({ query: insertInvoiceQuery, options }, res);
-        if (insertResult) {
-          data.invoice_number = insertResult.outBinds.invoice_number[0];
-          sendJsonResp(res, data, 200);
-        }
       }
+      sendJsonResp(res, data, 200);
     }
   }
 }

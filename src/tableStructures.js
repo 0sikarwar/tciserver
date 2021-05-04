@@ -8,6 +8,7 @@ const columns = {
     "weight",
     "docket_mode",
     "destination_category",
+    "docket_discount",
   ],
   rateList: ["company_id", "destination", "upto250gms", "upto500gms", "upto1kg", "above1kgsur", "above1kgair"],
 };

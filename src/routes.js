@@ -10,6 +10,7 @@ const {
   getDataToUpadate,
   updateDocketData,
   updateRateList,
+  getInvoiceNum,
 } = require("./urlMapping");
 module.exports = {
   "/savecontact": saveContactData,
@@ -23,4 +24,5 @@ module.exports = {
   "/getdatatoupadate": getDataToUpadate,
   "/updatedocketdata": updateDocketData,
   "/updateratelist": updateRateList,
+  "/getinvoicenum": getInvoiceNum,
 };
