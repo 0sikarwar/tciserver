@@ -87,8 +87,9 @@ async function getDockets(req, res) {
 async function getDataForInvoice(req, res) {
   const queryParam = req.query;
   const formData = JSON.parse(queryParam.formData);
-  const startDate = new Date(new Date(formData.for_month).setHours(0, 0, 0, 0));
-  const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+  const startDate = new Date(new Date(formData.from_month).setHours(0, 0, 0, 0));
+  const temp = new Date(formData.to_month);
+  const endDate = new Date(temp.getFullYear(), temp.getMonth() + 1, 0);
   const query = `select * from DOCKET_DETAIL_TABLE WHERE
     (docket_date BETWEEN
       '${startDate.getTime()}' AND '${endDate.getTime()}' )
@@ -182,7 +183,7 @@ async function updateRateList(req, res) {
 async function getInvoiceNum(req, res) {
   const queryParam = req.query;
   const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (COMPANY_ID, FOR_MONTH) 
-        VALUES (${queryParam.company_id}, '${queryParam.for_month}') returning id INTO :invoice_number`;
+        VALUES (${queryParam.company_id}, '${queryParam.from_month} - ${queryParam.to_month}') returning id INTO :invoice_number`;
   const options = { invoice_number: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
   const insertResult = await executeDbQuery({ query: insertInvoiceQuery, options }, res);
   if (insertResult) {

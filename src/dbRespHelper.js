@@ -72,8 +72,8 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
         } else {
           const mutilplier = item.destination_category === "HR, PB and HP" || item.docket_mode === "Air" ? 3 : 5;
           let tempRate = ratesObj[item.destination_category].above1kgsur;
-          if (item.docket_mode === "Air" && ratesObj[item.destination_category].above1kgair) {
-            tempRate = ratesObj[item.destination_category].above1kgsur;
+          if (item.docket_mode === "Air" && Number(ratesObj[item.destination_category].above1kgair)) {
+            tempRate = ratesObj[item.destination_category].above1kgair;
           }
           tempRate -= obj.docket_discount;
           if (item.weight <= mutilplier) {
@@ -98,7 +98,7 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
       invoice_date: new Date().toDateString(),
       invoice_number: "",
     };
-    const selectInvoiceQuery = `Select id from INVOICE_TABLE where COMPANY_ID=${formData.company_id} AND  FOR_MONTH='${formData.for_month}'`;
+    const selectInvoiceQuery = `Select id from INVOICE_TABLE where COMPANY_ID=${formData.company_id} AND  FOR_MONTH='${formData.from_month} - ${formData.to_month}'`;
     const selectResult = await executeDbQuery(selectInvoiceQuery, res);
     if (selectResult) {
       const selectedInvoice = convertDbDataToJson(selectResult);
