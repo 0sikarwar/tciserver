@@ -182,8 +182,8 @@ async function updateRateList(req, res) {
 
 async function getInvoiceNum(req, res) {
   const queryParam = req.query;
-  const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (COMPANY_ID, FOR_MONTH) 
-        VALUES (${queryParam.company_id}, '${queryParam.from_month} - ${queryParam.to_month}') returning id INTO :invoice_number`;
+  const insertInvoiceQuery = `INSERT INTO INVOICE_TABLE (ID, COMPANY_ID, FOR_MONTH) 
+        VALUES ((select count(id)+1 from invoice_table), ${queryParam.company_id}, '${queryParam.from_month} - ${queryParam.to_month}') returning id INTO :invoice_number`;
   const options = { invoice_number: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } };
   const insertResult = await executeDbQuery({ query: insertInvoiceQuery, options }, res);
   if (insertResult) {
