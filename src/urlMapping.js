@@ -55,11 +55,13 @@ async function saveDocketData(req, res) {
   let isError = false;
   let query = "INSERT ALL ";
   for (const obj of formData) {
-    const rateListQuery = `select * from RATE_LIST_TABLE WHERE COMPANY_ID=${obj.company_id}`;
-    const rateListResult = await executeDbQuery(rateListQuery, res);
-    const ratesList = convertDbDataToJson(rateListResult) || [];
     const ratesObj = {};
-    ratesList.forEach((item) => (ratesObj[item.destination] = item));
+    if (!obj.amount && obj.company_id) {
+      const rateListQuery = `select * from RATE_LIST_TABLE WHERE COMPANY_ID=${obj.company_id}`;
+      const rateListResult = await executeDbQuery(rateListQuery, res);
+      const ratesList = convertDbDataToJson(rateListResult) || [];
+      ratesList.forEach((item) => (ratesObj[item.destination] = item));
+    }
     let valString = "";
     let dest_cat = "";
     if (["docket_num", "destination"].includes(obj.key) && !obj.val) {
@@ -75,7 +77,9 @@ async function saveDocketData(req, res) {
       if (valString) valString += ",";
       valString += key === "docket_date" ? `'${getFormattedDate(val)}'` : `'${val}'`;
     });
-    const amount = getAmountBasedOnCategory(ratesObj, dest_cat, obj.weight, obj.docket_mode, obj.docket_discount);
+    let amount = "";
+    if (Object.keys(ratesObj).length)
+      amount = getAmountBasedOnCategory(ratesObj, dest_cat, obj.weight, obj.docket_mode, obj.docket_discount);
     valString += `,'${dest_cat}','${amount}'`;
     query += `INTO ADMIN.DOCKET_DETAIL_TABLE (${keysString}) VALUES (${valString}) `;
   }
@@ -92,7 +96,7 @@ async function getCompanyNames(req, res) {
 }
 
 async function getDockets(req, res) {
-  const query = `select * from DOCKET_DETAIL_TABLE ORDER BY id desc`;
+  const query = `select * from DOCKET_DETAIL_TABLE`;
   const result = await executeDbQuery(query, res);
   result && handleSelectQueryResp(query, result, res);
 }
@@ -137,6 +141,13 @@ async function updateDocketData(req, res) {
   let query = "UPDATE DOCKET_DETAIL_TABLE SET ";
   let updateString = "",
     dest_cat = "";
+  const ratesObj = {};
+  if (!listToUpdate[0].amount && listToUpdate[0].company_id) {
+    const rateListQuery = `select * from RATE_LIST_TABLE WHERE COMPANY_ID=${listToUpdate[0].company_id}`;
+    const rateListResult = await executeDbQuery(rateListQuery, res);
+    const ratesList = convertDbDataToJson(rateListResult) || [];
+    ratesList.forEach((item) => (ratesObj[item.destination] = item));
+  }
   Object.entries(listToUpdate[0]).forEach(([key, val]) => {
     if (!tableColumns.docket.includes(key.toLowerCase())) return;
     if (["docket_num", "destination"].includes(key) && !val) {
@@ -148,7 +159,16 @@ async function updateDocketData(req, res) {
     updateString += `${key} = '${key === "docket_date" ? getFormattedDate(val) : val}'`;
   });
   if (isError) return;
-  query += `${updateString}, DESTINATION_CATEGORY = '${dest_cat}' WHERE docket_num = '${formData.docket_num}'`;
+  let amount = "";
+  if (Object.keys(ratesObj).length)
+    amount = getAmountBasedOnCategory(
+      ratesObj,
+      dest_cat,
+      listToUpdate[0].weight,
+      listToUpdate[0].docket_mode,
+      listToUpdate[0].docket_discount
+    );
+  query += `${updateString}, DESTINATION_CATEGORY = '${dest_cat}', AMOUNT = '${amount}'  WHERE docket_num = '${formData.docket_num}'`;
   const result = await executeDbQuery(query, res);
   result && handleInsertQueryResp(query, result, res);
 }
