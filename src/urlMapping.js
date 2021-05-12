@@ -1,5 +1,12 @@
 const oracledb = require("oracledb");
-const { sendJsonResp, handleErr, getDestinationCategory, getFormattedDate, convertDbDataToJson } = require("./utils");
+const {
+  sendJsonResp,
+  handleErr,
+  getDestinationCategory,
+  getFormattedDate,
+  convertDbDataToJson,
+  getAmountBasedOnCategory,
+} = require("./utils");
 const { executeDbQuery, getQueryValueString } = require("./dbConnection");
 const {
   handleInsertQueryResp,
@@ -47,13 +54,18 @@ async function saveDocketData(req, res) {
   const { formData } = req.body;
   let isError = false;
   let query = "INSERT ALL ";
-  formData.forEach((obj) => {
+  for (const obj of formData) {
+    const rateListQuery = `select * from RATE_LIST_TABLE WHERE COMPANY_ID=${obj.company_id}`;
+    const rateListResult = await executeDbQuery(rateListQuery, res);
+    const ratesList = convertDbDataToJson(rateListResult) || [];
+    const ratesObj = {};
+    ratesList.forEach((item) => (ratesObj[item.destination] = item));
     let valString = "";
     let dest_cat = "";
     if (["docket_num", "destination"].includes(obj.key) && !obj.val) {
       handleErr({ msg: obj.key + "field is Required" }, res);
     }
-    const keysString = `${getKeysString("docket", obj)}, DESTINATION_CATEGORY`;
+    const keysString = `${getKeysString("docket", obj)}, DESTINATION_CATEGORY, AMOUNT`;
     Object.entries(obj).forEach(([key, val]) => {
       if (["docket_num", "destination"].includes(key) && !val) {
         handleErr({ msg: key + " field is Required" }, res, 206);
@@ -63,9 +75,10 @@ async function saveDocketData(req, res) {
       if (valString) valString += ",";
       valString += key === "docket_date" ? `'${getFormattedDate(val)}'` : `'${val}'`;
     });
-    valString += `,'${dest_cat}'`;
+    const amount = getAmountBasedOnCategory(ratesObj, dest_cat, obj.weight, obj.docket_mode, obj.docket_discount);
+    valString += `,'${dest_cat}','${amount}'`;
     query += `INTO ADMIN.DOCKET_DETAIL_TABLE (${keysString}) VALUES (${valString}) `;
-  });
+  }
   if (isError) return;
   query += "SELECT null FROM dual";
   const result = await executeDbQuery(query, res);

@@ -50,6 +50,34 @@ function getDestinationCategory(destination) {
   return category;
 }
 
+function getAmountBasedOnCategory(ratesObj, cat, weight, mode, discount) {
+  let amount = null;
+  if (!ratesObj[cat]) {
+    amount = "NA";
+  } else {
+    if (weight <= 0.25) {
+      amount = ratesObj[cat].upto250gms;
+    } else if (weight <= 0.5) {
+      amount = ratesObj[cat].upto500gms;
+    } else if (weight <= 1) {
+      amount = ratesObj[cat].upto1kg;
+    } else {
+      const mutilplier = cat === "HR, PB and HP" || mode === "Air" ? 3 : 5;
+      let tempRate = ratesObj[cat].above1kgsur;
+      if (mode === "Air" && Number(ratesObj[cat].above1kgair)) {
+        tempRate = ratesObj[cat].above1kgair;
+      }
+      tempRate -= discount || 0;
+      if (weight <= mutilplier) {
+        amount = Number(tempRate) * mutilplier;
+      } else {
+        amount = Number(tempRate) * Math.ceil(weight);
+      }
+    }
+  }
+  return amount;
+}
+
 function getFormattedDate(str, splitter = "/") {
   const arr = str.split(splitter);
   arr.forEach((item, i) => {
@@ -66,4 +94,5 @@ module.exports = {
   handleErr,
   getDestinationCategory,
   getFormattedDate,
+  getAmountBasedOnCategory,
 };

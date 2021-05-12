@@ -63,26 +63,6 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
       if (!ratesObj[item.destination_category]) {
         obj.amount = "NA";
       } else {
-        if (item.weight <= 0.25) {
-          obj.amount = ratesObj[item.destination_category].upto250gms;
-        } else if (item.weight <= 0.5) {
-          obj.amount = ratesObj[item.destination_category].upto500gms;
-        } else if (item.weight <= 1) {
-          obj.amount = ratesObj[item.destination_category].upto1kg;
-        } else {
-          const mutilplier = item.destination_category === "HR, PB and HP" || item.docket_mode === "Air" ? 3 : 5;
-          let tempRate = ratesObj[item.destination_category].above1kgsur;
-          if (item.docket_mode === "Air" && Number(ratesObj[item.destination_category].above1kgair)) {
-            tempRate = ratesObj[item.destination_category].above1kgair;
-          }
-          tempRate -= obj.docket_discount;
-          if (item.weight <= mutilplier) {
-            obj.amount = Number(tempRate) * mutilplier;
-          } else {
-            obj.amount = Number(tempRate) * Math.ceil(item.weight);
-          }
-        }
-
         totalAmount += Number(obj.amount);
         obj.amount = `₹ ${obj.amount}`;
       }

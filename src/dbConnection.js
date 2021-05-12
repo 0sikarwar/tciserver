@@ -11,7 +11,13 @@ const config = {
 };
 
 function handleDbErr(query, err, res) {
-  sendJsonResp(res, { status: "DB_ERROR", desc: "Something went wrong", err }, 500);
+  const desc = "Something went wrong";
+  let status = 500;
+  if (err.errorNum === 1) {
+    err.msg = "Cannot insert Duplicate Entry";
+    status = 200;
+  }
+  sendJsonResp(res, { status: "DB_ERROR", desc, err }, status);
   console.error("DB_ERROR", err, query);
 }
 
