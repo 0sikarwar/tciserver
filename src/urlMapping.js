@@ -97,7 +97,8 @@ async function getCompanyNames(req, res) {
 
 async function getDockets(req, res) {
   const query = `SELECT
- Docket_Num,company_ID,company_name,Docket_date,amount,weight,destination,destination_category,docket_mode,docket_discount
+ Docket_Num,company_ID,company_name,Docket_date,amount,weight,destination,destination_category,docket_mode,docket_discount,
+ docket_detail_table.added_on, docket_detail_table.updated_on
 FROM
  docket_detail_table
 INNER JOIN company_data_table ON docket_detail_table.company_id=company_data_table.id`;

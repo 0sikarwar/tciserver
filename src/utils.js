@@ -27,7 +27,7 @@ function convertDbDataToJson(dbData) {
   const formattedRowsList = rows.map((row) => {
     const obj = {};
     row.forEach((item, i) => {
-      if (metaData[i].name.toLowerCase().includes("date"))
+      if (metaData[i].name.toLowerCase().includes("date") && !metaData[i].name.toLowerCase().includes("update"))
         obj[metaData[i].name.toLowerCase()] = new Date(parseInt(item)).toDateString();
       else obj[metaData[i].name.toLowerCase()] = item;
     });

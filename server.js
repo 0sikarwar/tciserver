@@ -42,4 +42,5 @@ app.use((req, res) => {
 app.listen(8080, function (req, res) {
   intitalizeOracle();
   console.log(`App listening to localhost:8080....`);
+  console.log(`App started at ${new Date().toString()}`);
 });
