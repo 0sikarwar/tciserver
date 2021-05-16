@@ -112,7 +112,7 @@ async function getDataForInvoice(req, res) {
   const startDate = new Date(new Date(formData.from_month).setHours(0, 0, 0, 0));
   const temp = new Date(formData.to_month);
   const endDate = new Date(temp.getFullYear(), temp.getMonth() + 1, 0);
-  const query = `select * from DOCKET_DETAIL_TABLE WHERE
+  const query = `select Docket_Num,Docket_date,amount,weight,destination,destination_category,docket_mode,docket_discount from DOCKET_DETAIL_TABLE WHERE
     (docket_date BETWEEN
       '${startDate.getTime()}' AND '${endDate.getTime()}' )
       AND (COMPANY_ID=${formData.company_id}) ORDER BY docket_date`;
