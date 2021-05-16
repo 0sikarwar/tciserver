@@ -154,7 +154,7 @@ async function updateDocketData(req, res) {
     ratesList.forEach((item) => (ratesObj[item.destination] = item));
   }
   Object.entries(listToUpdate[0]).forEach(([key, val]) => {
-    if (!tableColumns.docket.includes(key.toLowerCase())) return;
+    if (!tableColumns.docket.includes(key.toLowerCase()) || key.toLowerCase() === "amount") return;
     if (["docket_num", "destination"].includes(key) && !val) {
       handleErr({ msg: key + " field is Required" }, res, 206);
       isError = true;
@@ -164,7 +164,7 @@ async function updateDocketData(req, res) {
     updateString += `${key} = '${key === "docket_date" ? getFormattedDate(val) : val}'`;
   });
   if (isError) return;
-  let amount = "";
+  let amount = listToUpdate[0].amount;
   if (Object.keys(ratesObj).length)
     amount = getAmountBasedOnCategory(
       ratesObj,
