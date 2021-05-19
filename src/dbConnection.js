@@ -59,8 +59,12 @@ function executeDbQuery(query, res) {
       const result = await connection.execute(sqlQuery, options);
       resolve(result);
     } catch (err) {
-      handleDbErr(sqlQuery, err, res);
-      resolve(null);
+      if (err.errorNum === 1) {
+        resolve("DUPLICATE_ENTRY");
+      } else {
+        handleDbErr(sqlQuery, err, res);
+        resolve(null);
+      }
     } finally {
       if (connection) {
         try {

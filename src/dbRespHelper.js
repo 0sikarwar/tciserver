@@ -1,4 +1,4 @@
-const { sendJsonResp, convertDbDataToJson } = require("./utils");
+const { sendJsonResp, convertDbDataToJson, getAmountBasedOnCategory } = require("./utils");
 const { executeDbQuery } = require("./dbConnection");
 const oracledb = require("oracledb");
 const { getKeysString } = require("./tableStructures");
@@ -89,11 +89,40 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
     }
   }
 }
+async function updateAmountInDocket(companyDetails, extraFormFields, ratesList, res) {
+  const startDate = new Date(new Date(extraFormFields.dockets_from_month).setHours(0, 0, 0, 0));
+  const temp = new Date(extraFormFields.dockets_to_month);
+  const endDate = new Date(temp.getFullYear(), temp.getMonth() + 1, 0);
+  const selectQuery = `select * from DOCKET_DETAIL_TABLE WHERE(
+    docket_date BETWEEN'${startDate.getTime()}' AND '${endDate.getTime()}' 
+    ) AND (COMPANY_ID=${companyDetails.id})`;
+  let docketList = await executeDbQuery(selectQuery, res);
+  if (docketList) docketList = convertDbDataToJson(docketList);
+  else return;
+  const ratesObj = {};
+  ratesList.forEach((item) => (ratesObj[item.destination] = item));
+  if (Object.keys(ratesObj).length)
+    for (let obj of docketList) {
+      amount = getAmountBasedOnCategory(
+        ratesObj,
+        obj.destination_category,
+        obj.weight,
+        obj.docket_mode,
+        obj.docket_discount
+      );
+      const updateQuery = `UPDATE DOCKET_DETAIL_TABLE SET AMOUNT = '${amount}' WHERE docket_num = '${obj.docket_num}'`;
+      const updateResult = await executeDbQuery(updateQuery, res);
+      if (!updateResult) return;
+    }
+  else return;
 
+  return true;
+}
 module.exports = {
   handleInsertQueryResp,
   handleSelectQueryResp,
   handleAddCompanyResp,
   handleGetInvoiceDataResp,
   insertInRateList,
+  updateAmountInDocket,
 };

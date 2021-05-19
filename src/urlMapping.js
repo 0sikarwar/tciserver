@@ -14,6 +14,7 @@ const {
   handleAddCompanyResp,
   handleGetInvoiceDataResp,
   insertInRateList,
+  updateAmountInDocket,
 } = require("./dbRespHelper");
 const { getKeysString, tableColumns } = require("./tableStructures");
 
@@ -54,6 +55,7 @@ async function saveDocketData(req, res) {
   const { formData } = req.body;
   let isError = false;
   let query = "INSERT ALL ";
+  let docketNumStr = "";
   for (const obj of formData) {
     const ratesObj = {};
     if (!obj.amount && obj.company_id) {
@@ -77,16 +79,30 @@ async function saveDocketData(req, res) {
       if (valString) valString += ",";
       valString += key === "docket_date" ? `'${getFormattedDate(val)}'` : `'${val}'`;
     });
-    let amount = "";
+    let amount = obj.amount;
     if (Object.keys(ratesObj).length)
       amount = getAmountBasedOnCategory(ratesObj, dest_cat, obj.weight, obj.docket_mode, obj.docket_discount);
     valString += `,'${dest_cat}','${amount}'`;
     query += `INTO ADMIN.DOCKET_DETAIL_TABLE (${keysString}) VALUES (${valString}) `;
+    if (docketNumStr) docketNumStr += ", ";
+    docketNumStr += `'${obj.docket_num}'`;
   }
   if (isError) return;
   query += "SELECT null FROM dual";
   const result = await executeDbQuery(query, res);
-  result && handleInsertQueryResp(query, result, res);
+  if (result) {
+    if (result === "DUPLICATE_ENTRY") {
+      const selectQuery = `SELECT docket_num from DOCKET_DETAIL_TABLE where docket_num in (${docketNumStr})`;
+      let duplicateDocket = await executeDbQuery(selectQuery, res);
+      if (duplicateDocket) duplicateDocket = convertDbDataToJson(duplicateDocket);
+      let str = "";
+      duplicateDocket.forEach((item) => {
+        if (str) str += " | ";
+        str += item.docket_num;
+      });
+      handleErr({ msg: "Duplicate  entries:=> " + str }, res, 203);
+    } else handleInsertQueryResp(query, result, res);
+  }
 }
 
 async function getCompanyNames(req, res) {
@@ -179,7 +195,7 @@ async function updateDocketData(req, res) {
 }
 
 async function updateRateList(req, res) {
-  const { formData, listToUpdate, fetchedListLen, companyDetails } = req.body;
+  const { formData, listToUpdate, fetchedListLen, companyDetails, extraFormFields } = req.body;
   let result = [];
   let isError = false;
   for (let obj of listToUpdate.slice(0, fetchedListLen)) {
@@ -214,6 +230,13 @@ async function updateRateList(req, res) {
     query += `${updateString} WHERE id = '${companyDetails.id}'`;
     const queryResult = await executeDbQuery(query, res);
     if (!queryResult) isError = true;
+  }
+  if (!isError && extraFormFields.reflect_changes_in_docket) {
+    const amountUpdateRes = await updateAmountInDocket(companyDetails, extraFormFields, listToUpdate, res);
+    if (!amountUpdateRes) {
+      handleErr({ msg: "Rates updated but updation in amount for docket failed" }, res, 206);
+      return;
+    }
   }
   !isError && handleInsertQueryResp("MULTIPLE INSERT IN RATE TABEL", {}, res);
 }
