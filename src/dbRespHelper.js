@@ -49,37 +49,44 @@ async function insertInRateList(rateList, company_id, company_name, res) {
 }
 
 async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData) {
-  const docketList = convertDbDataToJson(docketResult);
-  const ratesObj = {};
-  let totalAmount = 0;
-  const updatedList = docketList.map((item) => {
-    const obj = { ...item };
-    if (!ratesObj[item.destination_category]) {
-      obj.amount = "NA";
-    } else {
-      totalAmount += Number(obj.amount);
-      obj.amount = `₹ ${obj.amount}`;
+  const rateListQuery = `select * from RATE_LIST_TABLE WHERE COMPANY_ID=${formData.company_id}`;
+  const rateListResult = await executeDbQuery(rateListQuery, res);
+  if (rateListResult) {
+    const docketList = convertDbDataToJson(docketResult);
+    const ratesList = convertDbDataToJson(rateListResult);
+    const ratesObj = {};
+    let totalAmount = 0;
+
+    ratesList.forEach((item) => (ratesObj[item.destination] = item));
+    const updatedList = docketList.map((item) => {
+      const obj = { ...item };
+      if (!ratesObj[item.destination_category]) {
+        obj.amount = "NA";
+      } else {
+        totalAmount += Number(obj.amount);
+        obj.amount = `₹ ${obj.amount}`;
+      }
+      obj.weight = Number(obj.weight).toFixed(3) + " Kg";
+      return obj;
+    });
+    const data = {
+      status: "SUCCESS",
+      desc: "",
+      docketList: updatedList,
+      totalAmount: `₹ ${totalAmount}`,
+      ...formData,
+      invoice_date: new Date().toDateString(),
+      invoice_number: "",
+    };
+    const selectInvoiceQuery = `Select id from INVOICE_TABLE where COMPANY_ID=${formData.company_id} AND  FOR_MONTH='${formData.from_month} - ${formData.to_month}'`;
+    const selectResult = await executeDbQuery(selectInvoiceQuery, res);
+    if (selectResult) {
+      const selectedInvoice = convertDbDataToJson(selectResult);
+      if (selectedInvoice.length) {
+        data.invoice_number = selectedInvoice[0].id;
+      }
+      sendJsonResp(res, data, 200);
     }
-    obj.weight = Number(obj.weight).toFixed(3) + " Kg";
-    return obj;
-  });
-  const data = {
-    status: "SUCCESS",
-    desc: "",
-    docketList: updatedList,
-    totalAmount: `₹ ${totalAmount}`,
-    ...formData,
-    invoice_date: new Date().toDateString(),
-    invoice_number: "",
-  };
-  const selectInvoiceQuery = `Select id from INVOICE_TABLE where COMPANY_ID=${formData.company_id} AND  FOR_MONTH='${formData.from_month} - ${formData.to_month}'`;
-  const selectResult = await executeDbQuery(selectInvoiceQuery, res);
-  if (selectResult) {
-    const selectedInvoice = convertDbDataToJson(selectResult);
-    if (selectedInvoice.length) {
-      data.invoice_number = selectedInvoice[0].id;
-    }
-    sendJsonResp(res, data, 200);
   }
 }
 async function updateAmountInDocket(companyDetails, extraFormFields, ratesList, res) {
