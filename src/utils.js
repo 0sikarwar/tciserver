@@ -56,16 +56,16 @@ function getAmountBasedOnCategory(ratesObj, cat, weight, mode, discount) {
     amount = "NA";
   } else {
     if (weight <= 0.25) {
-      amount = ratesObj[cat].upto250gms;
+      amount = ratesObj[cat].upto250gms || ratesObj[cat].upto250Gms;
     } else if (weight <= 0.5) {
-      amount = ratesObj[cat].upto500gms;
+      amount = ratesObj[cat].upto500gms || ratesObj[cat].upto500Gms;
     } else if (weight <= 1) {
-      amount = ratesObj[cat].upto1kg;
+      amount = ratesObj[cat].upto1kg || ratesObj[cat].upto1Kg;
     } else {
       const mutilplier = cat === "HR, PB and HP" || mode === "Air" ? 3 : 5;
-      let tempRate = ratesObj[cat].above1kgsur;
-      if (mode === "Air" && Number(ratesObj[cat].above1kgair)) {
-        tempRate = ratesObj[cat].above1kgair;
+      let tempRate = ratesObj[cat].above1kgsur || ratesObj[cat].above1kgSur;
+      if (mode === "Air" && Number(ratesObj[cat].above1kgair || ratesObj[cat].above1KgAir)) {
+        tempRate = ratesObj[cat].above1kgair || ratesObj[cat].above1KgAir;
       }
       tempRate -= discount || 0;
       if (weight <= mutilplier) {
