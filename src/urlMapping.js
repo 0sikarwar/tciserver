@@ -125,9 +125,20 @@ INNER JOIN company_data_table ON docket_detail_table.company_id=company_data_tab
 async function getDataForInvoice(req, res) {
   const queryParam = req.query;
   const formData = JSON.parse(queryParam.formData);
+  if (queryParam.isInvoiceNumber === "true") {
+    const invoiceQuery = `select * from INVOICE_TABLE where id = ${formData.invoice_num}`;
+    const invoiceResult = await executeDbQuery(invoiceQuery, res);
+    const jsonInvoiceRes = convertDbDataToJson(invoiceResult);
+    const [fromDate, toDate] = jsonInvoiceRes[0].for_month.split(" - ");
+    formData.from_month = fromDate;
+    formData.to_month = toDate;
+    formData.company_id = jsonInvoiceRes[0].company_id;
+  }
+
   const startDate = new Date(new Date(formData.from_month).setHours(0, 0, 0, 0));
-  const temp = new Date(formData.to_month);
-  const endDate = new Date(temp.getFullYear(), temp.getMonth() + 1, 0);
+  const temp = new Date(new Date(formData.to_month).setHours(23, 59, 59, 0));
+  const endDate =
+    formData.to_month.split("-").length === 3 ? temp : new Date(temp.getFullYear(), temp.getMonth() + 1, 0);
   const query = `select Docket_Num,Docket_date,amount,weight,destination,destination_category,docket_mode,docket_discount from DOCKET_DETAIL_TABLE WHERE
     (docket_date BETWEEN
       '${startDate.getTime()}' AND '${endDate.getTime()}' )

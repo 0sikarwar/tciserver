@@ -75,15 +75,17 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
       docketList: updatedList,
       totalAmount: `₹ ${totalAmount}`,
       ...formData,
-      invoice_date: new Date().toDateString(),
       invoice_number: "",
     };
-    const selectInvoiceQuery = `Select id from INVOICE_TABLE where COMPANY_ID=${formData.company_id} AND  FOR_MONTH='${formData.from_month} - ${formData.to_month}'`;
+    const selectInvoiceQuery = `Select id, created_on from INVOICE_TABLE where COMPANY_ID=${formData.company_id} AND  FOR_MONTH='${formData.from_month} - ${formData.to_month}'`;
     const selectResult = await executeDbQuery(selectInvoiceQuery, res);
     if (selectResult) {
       const selectedInvoice = convertDbDataToJson(selectResult);
       if (selectedInvoice.length) {
+        const invoiceDate = new Date(selectedInvoice[0].created_on.split(", ").splice(0, 3).join(", "));
         data.invoice_number = selectedInvoice[0].id;
+        data.invoice_date = invoiceDate.toDateString();
+        data.due_date = new Date(invoiceDate.getTime() + 10 * 24 * 60 * 60 * 1000).toDateString();
       }
       sendJsonResp(res, data, 200);
     }
