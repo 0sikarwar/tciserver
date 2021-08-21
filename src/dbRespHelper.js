@@ -60,7 +60,7 @@ async function handleGetInvoiceDataResp(docketQuery, docketResult, res, formData
     ratesList.forEach((item) => (ratesObj[item.destination] = item));
     const updatedList = docketList.map((item) => {
       const obj = { ...item };
-      if (!ratesObj[item.destination_category]) {
+      if (!ratesObj[item.destination_category] && (!obj.amount || obj.amount === "NA")) {
         obj.amount = "NA";
       } else {
         totalAmount += Number(obj.amount);
