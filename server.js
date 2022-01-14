@@ -31,6 +31,7 @@ app.use((req, res) => {
       const data = {
         status: "NOT_FOUND",
         desc: "server can't find the requested url",
+        url: req.url,
       };
       sendJsonResp(res, data, 404);
     }

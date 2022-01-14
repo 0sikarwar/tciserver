@@ -26,7 +26,7 @@ async function intitalizeOracle(cb) {
     oracledb.initOracleClient({
       libDir:
         process.env.NODE_ENV === "production"
-          ? "/opt/oracle/instantclient_21_1"
+          ? "/opt/oracle/instantclient_21_4"
           : process.env["HOME"] + "/instantclient",
     });
     oracledb.autoCommit = true;
