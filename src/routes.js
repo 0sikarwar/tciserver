@@ -11,6 +11,8 @@ const {
   updateDocketData,
   updateRateList,
   getInvoiceNum,
+  signinUser,
+  registerUser,
 } = require("./urlMapping");
 module.exports = {
   "/savecontact": saveContactData,
@@ -25,4 +27,6 @@ module.exports = {
   "/updatedocketdata": updateDocketData,
   "/updateratelist": updateRateList,
   "/getinvoicenum": getInvoiceNum,
+  "/signin": signinUser,
+  "/register": registerUser,
 };

@@ -6,6 +6,8 @@ const {
   getFormattedDate,
   convertDbDataToJson,
   getAmountBasedOnCategory,
+  cipher,
+  decipher,
 } = require("./utils");
 const { executeDbQuery, getQueryValueString } = require("./dbConnection");
 const {
@@ -264,6 +266,68 @@ async function getInvoiceNum(req, res) {
   }
 }
 
+async function signinUser(req, res) {
+  const body = req.body;
+  const email = body.email.toLowerCase();
+  const query = `SELECT * FROM ADMIN.USER_TABLE WHERE EMAIL = '${email}'`;
+  const selectResult = await executeDbQuery(query, res);
+  const list = convertDbDataToJson(selectResult) || [];
+  const data = {};
+  let status = 200;
+  if (list.length) {
+    const userDetails = list[0];
+    const decipherFunc = decipher(email);
+    const password = decipherFunc(userDetails.password);
+    if (password === body.password) {
+      data.success = true;
+      data.userDetails = { ...userDetails };
+      delete data.userDetails.password;
+    } else {
+      data.success = false;
+      data.msg = "Incorrect Password";
+      data.errField = "password";
+      status = 422;
+    }
+  } else {
+    data.success = false;
+    data.msg = "User does not exist. Please Create account.";
+    data.errField = "email";
+    status = 401;
+  }
+  sendJsonResp(res, data, status);
+}
+
+async function registerUser(req, res) {
+  const body = req.body;
+  const email = body.email.toLowerCase();
+  const cipherFunc = cipher(email);
+  const password = cipherFunc(body.password);
+  const query = `INSERT INTO ADMIN.USER_TABLE (FIRSTNAME, EMAIL, PASSWORD, NAMESPACE) 
+  VALUES ('${body.name}', '${email}', '${password}', '${body.namespace}')`;
+  const insertResult = await executeDbQuery(query, res);
+  const data = {};
+  let status = 200;
+  if (insertResult) {
+    if (insertResult.rowsAffected) {
+      data.success = true;
+      data.msg = "User registered";
+      data.userDetails = { ...body };
+      delete data.userDetails.password;
+      delete data.userDetails.password1;
+    } else {
+      data.success = false;
+      data.msg = "User already exists";
+      data.errField = "email";
+      status = 422;
+    }
+  } else {
+    data.success = false;
+    data.msg = "Something went wrong try again after some time";
+    status = 404;
+  }
+  sendJsonResp(res, data, status);
+}
+
 module.exports = {
   saveContactData,
   getContactQueries,
@@ -277,4 +341,6 @@ module.exports = {
   updateDocketData,
   updateRateList,
   getInvoiceNum,
+  signinUser,
+  registerUser,
 };
