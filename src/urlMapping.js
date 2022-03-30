@@ -311,7 +311,7 @@ async function registerUser(req, res) {
     if (insertResult.rowsAffected) {
       data.success = true;
       data.msg = "User registered";
-      data.userDetails = { ...body };
+      data.userDetails = { ...body, firstname: body.name };
       delete data.userDetails.password;
       delete data.userDetails.password1;
     } else {
