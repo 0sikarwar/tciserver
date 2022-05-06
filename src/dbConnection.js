@@ -3,7 +3,7 @@ const { sendJsonResp } = require("./utils");
 
 const config = {
   user: "ADMIN",
-  password: "!@#$1234Cyber",
+  password: "!@#$1234Cyber1",
   connectString: "userdb_high",
   poolMax: 44,
   poolMin: 2,
