@@ -8,7 +8,7 @@
     "start": "nodemon --inspect server.js",
     "prod": "pm2 restart tci-server --update-env",
     "dev": "rm -rf tci_server && webpack --mode development && cp {package.json,yarn.lock} tci_server/ && node tci_server/server.js",
-    "deploy": "yarn run build && scp -r -i ~/.ssh/oracle.key /Users/gyanender.singh/tciserver/tci_server ubuntu@129.154.232.2:~/."
+    "deploy": "yarn run build && scp -r -i ~/.ssh/oracle.key /Users/gyanender.singh/P/tciserver/tci_server ubuntu@152.67.11.118:~/."
   },
   "author": "",
   "license": "ISC",

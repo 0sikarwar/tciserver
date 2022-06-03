@@ -62,7 +62,7 @@ function executeDbQuery(query, res) {
       if (err.errorNum === 1) {
         resolve("DUPLICATE_ENTRY");
       } else {
-        handleDbErr(sqlQuery, err, res);
+        res && handleDbErr(sqlQuery, err, res);
         resolve(null);
       }
     } finally {
@@ -86,9 +86,19 @@ function getQueryValueString(body) {
   return values;
 }
 
+function pollDB() {
+  setInterval(() => {
+    const query = `select * from USER_TABLE WHERE id = 1`;
+    executeDbQuery(query)
+      .then((result) => console.log("pollDB", result && result.rows.length))
+      .catch((err) => console.log(err));
+  }, 4.32e7);
+}
+
 module.exports = {
   config,
   intitalizeOracle,
   executeDbQuery,
   getQueryValueString,
+  pollDB,
 };

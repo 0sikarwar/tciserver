@@ -1,6 +1,6 @@
 require("babel-polyfill");
 const express = require("express");
-const { intitalizeOracle } = require("./src/dbConnection");
+const { intitalizeOracle, pollDB } = require("./src/dbConnection");
 const routes = require("./src/routes");
 const { sendJsonResp, handleErr } = require("./src/utils");
 const { authRquiredApis, isAuthorizedUser } = require("./src/authentication");
@@ -42,6 +42,7 @@ app.use((req, res) => {
 
 app.listen(8080, function (req, res) {
   intitalizeOracle();
+  pollDB();
   console.log(`App listening to localhost:8080....`);
   console.log(`App started at ${new Date().toString()}`);
 });
