@@ -6,7 +6,8 @@
   "scripts": {
     "build": "rm -rf tci_server && webpack --mode production && cp {package.json,yarn.lock} tci_server/",
     "start": "nodemon --inspect server.js",
-    "prod": "pm2 restart tci-server --update-env",
+    "pm2:start": "TZ='Asia/Calcutta' pm2 start server.js -n tci-server -o ./out.log -e ./err.log --time",
+    "prod": "pm2 restart tci-server --update-env ",
     "dev": "rm -rf tci_server && webpack --mode development && cp {package.json,yarn.lock} tci_server/ && node tci_server/server.js",
     "deploy": "yarn run build && scp -r -i ~/.ssh/oracle.key /Users/gyanender.singh/P/tciserver/tci_server ubuntu@152.67.11.118:~/."
   },

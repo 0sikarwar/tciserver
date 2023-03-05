@@ -8,6 +8,7 @@ const config = {
   poolMax: 44,
   poolMin: 2,
   poolIncrement: 0,
+  poolAlias: "adminPool",
 };
 
 function handleDbErr(query, err, res) {
@@ -48,7 +49,7 @@ function executeDbQuery(query, res) {
     let connection;
     let sqlQuery = "";
     try {
-      connection = await oracledb.getConnection();
+      connection = await oracledb.getConnection("adminPool");
       let options = {};
       if (typeof query === "string") {
         sqlQuery = query;
@@ -57,6 +58,7 @@ function executeDbQuery(query, res) {
         options = query.options;
       }
       const result = await connection.execute(sqlQuery, options);
+      await connection.release();
       resolve(result);
     } catch (err) {
       if (err.errorNum === 1) {
@@ -64,14 +66,6 @@ function executeDbQuery(query, res) {
       } else {
         res && handleDbErr(sqlQuery, err, res);
         resolve(null);
-      }
-    } finally {
-      if (connection) {
-        try {
-          await connection.release();
-        } catch (e) {
-          console.error(e);
-        }
       }
     }
   });
@@ -90,7 +84,7 @@ function pollDB() {
   setInterval(() => {
     const query = `select * from USER_TABLE WHERE id = 1`;
     executeDbQuery(query)
-      .then((result) => console.log("pollDB", result && result.rows.length))
+      .then((result) => console.log(`pollDB ${new Date().toLocaleString("en-IN")} `, result && result.rows.length))
       .catch((err) => console.log(err));
   }, 4.32e7);
 }

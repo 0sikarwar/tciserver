@@ -44,5 +44,5 @@ app.listen(8080, function (req, res) {
   intitalizeOracle();
   pollDB();
   console.log(`App listening to localhost:8080....`);
-  console.log(`App started at ${new Date().toString()}`);
+  console.log(`App started at ${new Date().toLocaleString("en-IN")}`);
 });
