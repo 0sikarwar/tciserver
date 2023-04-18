@@ -1,15 +1,6 @@
 const oracledb = require("oracledb");
 const { sendJsonResp } = require("./utils");
-
-const config = {
-  user: "ADMIN",
-  password: "!@#$1234Cyber1",
-  connectString: "userdb_high",
-  poolMax: 44,
-  poolMin: 2,
-  poolIncrement: 0,
-  poolAlias: "adminPool",
-};
+const config = require("./dbconfig.json");
 
 function handleDbErr(query, err, res) {
   const desc = "Something went wrong";
@@ -23,18 +14,18 @@ function handleDbErr(query, err, res) {
 }
 
 async function intitalizeOracle(cb) {
+  const libDir =
+    process.env.NODE_ENV === "production" ? "/opt/oracle/instantclient_21_9" : process.env["HOME"] + "/instantclient";
+  console.log("ORACLE_DIR", libDir);
   try {
     oracledb.initOracleClient({
-      libDir:
-        process.env.NODE_ENV === "production"
-          ? "/opt/oracle/instantclient_21_4"
-          : process.env["HOME"] + "/instantclient",
+      libDir,
     });
     oracledb.autoCommit = true;
     await oracledb.createPool(config, function (err, pool) {
       if (err) {
         console.error("createPool() callback: " + err.message);
-      }
+      } else cb();
       return;
     });
   } catch (err) {
@@ -80,13 +71,11 @@ function getQueryValueString(body) {
   return values;
 }
 
-function pollDB() {
-  setInterval(() => {
-    const query = `select * from USER_TABLE WHERE id = 1`;
-    executeDbQuery(query)
-      .then((result) => console.log(`pollDB ${new Date().toLocaleString("en-IN")} `, result && result.rows.length))
-      .catch((err) => console.log(err));
-  }, 4.32e7);
+function testQuery() {
+  const query = `select * from USER_TABLE WHERE id = 1`;
+  executeDbQuery(query)
+    .then((result) => console.log(`testQuery ${new Date().toLocaleString("en-IN")} `, result && result.rows.length))
+    .catch((err) => console.log(err));
 }
 
 module.exports = {
@@ -94,5 +83,5 @@ module.exports = {
   intitalizeOracle,
   executeDbQuery,
   getQueryValueString,
-  pollDB,
+  testQuery,
 };
