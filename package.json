@@ -10,7 +10,7 @@
     "pm2:delete": "pm2 delete tci-server 2> /dev/null || true",
     "prod": "yarn && yarn run pm2:delete && yarn run pm2:start",
     "dev": "rm -rf tci_server && webpack --mode development && cp {package.json,yarn.lock} tci_server/ && node tci_server/server.js",
-    "deploy": "yarn run build && scp -r -i /Users/gyanender.singh/Documents/newserver.key /Users/gyanender.singh/P/tciserver/tci_server ubuntu@144.24.97.202:~/."
+    "deploy": "yarn run build && scp -r -i ~/Documents/newserver.key ./tci_server ubuntu@144.24.97.202:~/."
   },
   "author": "",
   "license": "ISC",
@@ -18,6 +18,8 @@
     "basic-auth": "^2.0.1",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "oci-common": "^2.70.3",
+    "oci-database": "^2.70.3",
     "oracledb": "^5.5.0"
   },
   "devDependencies": {
