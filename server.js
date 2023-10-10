@@ -6,7 +6,7 @@ const { sendJsonResp, handleErr } = require("./src/utils");
 const { authRquiredApis, isAuthorizedUser } = require("./src/authentication");
 const auth = require("basic-auth");
 var cors = require("cors");
-const { cronForDb, startDb } = require("./startDB");
+const { cronForDb, startDb } = require("./src/startDB");
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -47,10 +47,12 @@ app.listen(8080, function (req, res) {
   const midnight = new Date(now);
   midnight.setHours(24, 0, 0, 0);
   const millisecondsUntilMidnight = midnight - now;
-  setTimeout(() => {
-    startDb();
-    cronForDb();
-  }, millisecondsUntilMidnight);
+  if (process.env.NODE_ENV !== "development") {
+    setTimeout(() => {
+      startDb();
+      cronForDb();
+    }, millisecondsUntilMidnight);
+  }
   console.log(`App listening to localhost:8080....`);
   console.log(`App started at ${new Date().toLocaleString("en-IN")}`);
 });

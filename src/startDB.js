@@ -32,6 +32,15 @@ module.exports.startDb = function () {
           .catch((err) => {
             console.error("Error starting Autonomous Database:", err);
           });
+      } else if (response.autonomousDatabase.lifecycleState === "AVAILABLE") {
+        databaseClient
+          .restartAutonomousDatabase(request)
+          .then(() => {
+            console.log("Autonomous Database is restarting...");
+          })
+          .catch((err) => {
+            console.error("Error restarting Autonomous Database:", err);
+          });
       }
     })
     .catch((err) => {
