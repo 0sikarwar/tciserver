@@ -9,7 +9,18 @@ var cors = require("cors");
 const { cronForDb, startDb } = require("./src/startDB");
 const app = express();
 app.use(express.json());
-app.use(cors());
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:9000",
+    "http://127.0.0.1",
+    "https://www.thecyberintel.com",
+  ],
+  credentials: true,
+  exposedHeaders: ["set-cookie"],
+};
+app.use(cors(corsOptions));
 app.use((req, res, next) => {
   let user = auth(req);
   if (authRquiredApis.includes(req.url)) {

@@ -3,10 +3,6 @@ const { destinationGroupList } = require("./data");
 function sendJsonResp(res, data = {}, status = 200, header = {}) {
   const responseHeader = {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Request-Method": "*",
-    "Access-Control-Allow-Methods": "*",
-    "Access-Control-Allow-Headers": "*",
     ...header,
   };
   res.writeHead(status, responseHeader);

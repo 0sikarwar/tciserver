@@ -16,10 +16,13 @@ function handleDbErr(query, err, res) {
 async function intitalizeOracle(cb) {
   const libDir =
     process.env.NODE_ENV === "production" ? "/opt/oracle/instantclient_21_9" : process.env["HOME"] + "/instantclient";
+  const configDir = process.env.NODE_ENV === "development" ? process.env["HOME"] + "/Documents/tci_db" : undefined;
   console.log("ORACLE_DIR", libDir);
+  console.log("configDir", configDir);
   try {
     oracledb.initOracleClient({
       libDir,
+      configDir,
     });
     oracledb.autoCommit = true;
     await oracledb.createPool(config, function (err, pool) {

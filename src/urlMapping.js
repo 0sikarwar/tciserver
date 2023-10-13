@@ -126,7 +126,7 @@ INNER JOIN company_data_table ON docket_detail_table.company_id=company_data_tab
 
 async function getDataForInvoice(req, res) {
   const queryParam = req.query;
-  const formData = JSON.parse(queryParam.formData);
+  const formData = queryParam.formData;
   if (queryParam.isInvoiceNumber === "true") {
     const invoiceQuery = `select * from INVOICE_TABLE where id = ${formData.invoice_num}`;
     const invoiceResult = await executeDbQuery(invoiceQuery, res);
