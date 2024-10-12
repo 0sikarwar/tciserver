@@ -45,13 +45,16 @@ function executeDbQuery(query, res) {
     try {
       connection = await oracledb.getConnection("adminPool");
       let options = {};
+      let format;
       if (typeof query === "string") {
         sqlQuery = query;
       } else {
         sqlQuery = query.query;
         options = query.options;
+        format = query.format;
       }
-      const result = await connection.execute(sqlQuery, options);
+      const argsList = [sqlQuery, options, format].filter(Boolean);
+      const result = await connection.execute(...argsList);
       await connection.release();
       resolve(result);
     } catch (err) {

@@ -1,3 +1,4 @@
+const { handleTableData } = require("./tableData");
 const {
   saveContactData,
   getContactQueries,
@@ -29,4 +30,5 @@ module.exports = {
   "/getinvoicenum": getInvoiceNum,
   "/signin": signinUser,
   "/register": registerUser,
+  "/tableData": handleTableData,
 };
