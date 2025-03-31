@@ -149,6 +149,25 @@ async function handleTableData(req, res) {
   }
 }
 
+async function handleExecuteDbQuery(req, res) {
+  const { body } = req;
+  try {
+    const result = await executeDbQuery(
+      { query: body.queryText.trim(), options: {}, format: { outFormat: OracleDB.OUT_FORMAT_OBJECT } },
+      res
+    );
+    if (result) {
+      sendJsonResp(res, result, 200);
+    } else {
+      sendJsonResp(res, { status: "DB_ERROR", err }, 400);
+    }
+  } catch (err) {
+    sendJsonResp(res, { status: "DB_ERROR", err }, 400);
+    console.error("Error executing query:", err);
+  }
+}
+
 module.exports = {
   handleTableData,
+  handleExecuteDbQuery,
 };

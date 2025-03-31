@@ -1,4 +1,4 @@
-const { handleTableData } = require("./tableData");
+const { handleTableData, handleExecuteDbQuery } = require("./tableData");
 const {
   saveContactData,
   getContactQueries,
@@ -31,4 +31,5 @@ module.exports = {
   "/signin": signinUser,
   "/register": registerUser,
   "/tableData": handleTableData,
+  "/executeDbQuery": handleExecuteDbQuery,
 };
