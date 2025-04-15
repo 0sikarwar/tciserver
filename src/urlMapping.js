@@ -3,7 +3,7 @@ const {
   sendJsonResp,
   handleErr,
   getDestinationCategory,
-  getFormattedDate,
+  getTimestamp,
   convertDbDataToJson,
   getAmountBasedOnCategory,
   cipher,
@@ -79,7 +79,7 @@ async function saveDocketData(req, res) {
       }
       if (key === "destination") dest_cat = getDestinationCategory(val);
       if (valString) valString += ",";
-      valString += key === "docket_date" ? `'${getFormattedDate(val)}'` : `'${val}'`;
+      valString += key === "docket_date" ? `'${getTimestamp(val)}'` : `'${val}'`;
     });
     let amount = obj.amount;
     if (Object.keys(ratesObj).length)
@@ -190,7 +190,7 @@ async function updateDocketData(req, res) {
     }
     if (key === "destination") dest_cat = getDestinationCategory(val);
     if (updateString) updateString += ",";
-    updateString += `${key} = '${key === "docket_date" ? getFormattedDate(val) : val}'`;
+    updateString += `${key} = '${key === "docket_date" ? getTimestamp(val) : val}'`;
   });
   if (isError) return;
   let amount = listToUpdate[0].amount;
@@ -217,7 +217,7 @@ async function updateRateList(req, res) {
     Object.entries(obj).forEach(([key, val]) => {
       if (key === "destination") dest_cat = getDestinationCategory(val);
       if (updateString) updateString += ",";
-      updateString += `${key} = '${key === "docket_date" ? getFormattedDate(val) : val}'`;
+      updateString += `${key} = '${key === "docket_date" ? getTimestamp(val) : val}'`;
     });
     query += `${updateString} WHERE company_id = '${formData.company_id}' and destination = '${obj.destination}'`;
     const queryResult = await executeDbQuery(query, res);

@@ -74,8 +74,12 @@ function getAmountBasedOnCategory(ratesObj, cat, weight, mode, discount) {
   return amount;
 }
 
-function getFormattedDate(str, splitter = "/") {
+function getTimestamp(str, splitter = "/") {
   const arr = str.split(splitter);
+  if (arr.length <= 1) {
+    const date = new Date(str);
+    if (!isNaN(date.getTime())) return date.getTime();
+  }
   arr.forEach((item, i) => {
     if (item.length < 2) {
       arr[i] = "0" + item;
@@ -108,7 +112,7 @@ module.exports = {
   convertDbDataToJson,
   handleErr,
   getDestinationCategory,
-  getFormattedDate,
+  getTimestamp,
   getAmountBasedOnCategory,
   cipher,
   decipher,
