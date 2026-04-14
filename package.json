@@ -10,7 +10,7 @@
     "pm2:delete": "pm2 delete tci-server 2> /dev/null || true",
     "prod": "yarn && yarn run pm2:delete && yarn run pm2:start",
     "dev": "rm -rf tci_server && webpack --mode development && cp {package.json,yarn.lock} tci_server/ && node tci_server/server.js",
-    "deploy": "yarn run build && sshpass -p 2665 scp -r ./tci_server ubuntu@144.24.97.202:~/."
+    "deploy": "yarn run build && sshpass -p 2665 scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ./tci_server ubuntu@144.24.97.202:~/"
   },
   "author": "",
   "license": "ISC",

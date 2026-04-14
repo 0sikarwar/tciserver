@@ -17,6 +17,8 @@ const corsOptions = {
     "http://127.0.0.1",
     "https://www.thecyberintel.com",
     "https://admin.thecyberintel.com",
+    "https://solutions.thecyberintel.com",
+    "https://app.thecyberintel.com",
   ],
   credentials: true,
   exposedHeaders: ["set-cookie"],
